@@ -28,20 +28,19 @@ contract VestingMerkleDistributor {
     mapping(uint256 => uint256) private claimedBitMap;
 
     constructor(address token, bytes32 merkleRoot, uint256 startTimestamp, uint256 endTimestamp) {
+        require(endTimestamp >= startTimestamp, "Invalid interval");
+        
         TOKEN_ADDRESS = token;
         MERKLE_ROOT = merkleRoot;
         VESTING_START_AND_END = (startTimestamp.toUint128() << 128) + endTimestamp.toUint128();
     }
 
     function getVestingStartAndEnd() public view returns (uint256 vestingStart, uint256 vestingEnd) {
-        vestingStart = uint256(VESTING_START_AND_END >> 128);
-        vestingEnd = uint256(uint128(VESTING_START_AND_END));
+        uint256 _vse = VESTING_START_AND_END;
+        vestingStart = uint256(_vse >> 128);
+        vestingEnd = uint256(uint128(_vse));
     }
 
-    function fractionClaimed(uint256 index) public view returns (uint8) {
-        return _getClaimAmount(index);
-    }
-    
     function fractionVested() public view returns (uint8) {
         (uint256 vestingStart, uint256 vestingEnd) = getVestingStartAndEnd();
 
@@ -58,7 +57,7 @@ contract VestingMerkleDistributor {
         bytes32 node = keccak256(abi.encodePacked(index, account, tokenGrant));
         require(MerkleProof.verify(merkleProof, MERKLE_ROOT, node), "Invalid proof");
 
-        uint8 _fractionClaimed = fractionClaimed(index);
+        uint8 _fractionClaimed = getClaimAmount(index);
         uint8 _fractionVested = fractionVested();
 
         require(_fractionVested > _fractionClaimed, "Nothing to claim");
@@ -71,7 +70,7 @@ contract VestingMerkleDistributor {
         emit Claimed(account, amountToSend);
     }
 
-    function _getClaimAmount(uint256 index) private view returns (uint8) {
+    function getClaimAmount(uint256 index) public view returns (uint8) {
         uint256 claimedKey = index / 32;
         uint256 claimedWord = (index % 32);
         return uint8(claimedBitMap[claimedKey] >> (claimedWord*8));
