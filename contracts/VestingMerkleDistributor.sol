@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
+//import "hardhat/console.sol";
+
 contract VestingMerkleDistributor {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
@@ -32,7 +34,7 @@ contract VestingMerkleDistributor {
         
         TOKEN_ADDRESS = token;
         MERKLE_ROOT = merkleRoot;
-        VESTING_START_AND_END = (startTimestamp.toUint128() << 128) + endTimestamp.toUint128();
+        VESTING_START_AND_END = (startTimestamp << 128) + endTimestamp.toUint128();
     }
 
     function getVestingStartAndEnd() public view returns (uint256 vestingStart, uint256 vestingEnd) {
@@ -86,7 +88,7 @@ contract VestingMerkleDistributor {
         // myMask is 0s in the slot:
         // myMask could be 11111111000000011111111
         uint256 myMask = ~(uint256(MAX_CLAIM_VALUE) << (claimedWord*8));
-        // (claimedBitMap[claimedWordIndex] & ~myMask) is the existing bitmap with my slot zero'd out
-        claimedBitMap[claimedWordIndex] = (claimedBitMap[claimedWordIndex] & ~myMask) | newClaimMask;
+        // (claimedBitMap[claimedWordIndex] & myMask) is the existing bitmap with my slot zero'd out
+        claimedBitMap[claimedWordIndex] = (claimedBitMap[claimedWordIndex] & myMask) | newClaimMask;
     }
 }

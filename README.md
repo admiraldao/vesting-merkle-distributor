@@ -29,3 +29,7 @@ Reconstructed merkle root be7ad119bb4a3536365f54c054bf5607ac7b0e62e5e6979e14e523
 Root matches the one read from the JSON? true
 ```
 
+## Testing Solidity
+Use alchemy to fork mainnet:
+`$ export ALCHEMY_API_KEY="e5D9bYnpx..."`
+Then run `npx hardhat test`
