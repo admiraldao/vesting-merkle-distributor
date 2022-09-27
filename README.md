@@ -2,12 +2,11 @@
 
 Starting from https://github.com/Uniswap/merkle-distributor/
 
-Updated to use Solidity 0.8 and hardhat
-
-Token vesting is in 8 bits (1/255th is minimum increment)
+* Updated to use Solidity 0.8 and hardhat
+* Extends the `claimed` bitmap from a single binary value per address to 8 bits per address, meaning that vesting can take place in 1/255th increments while still being highly gas efficient (Since 256/8 = 32 addresses share the same memory slot)
 
 ## Preparing the input
-Prepare a JSON file that maps addresses to the numeric (base 10) or string (base 16) number of tokens. See `example.json`.
+Prepare a JSON file that maps addresses to the numeric (base 10) or string (base 16) number of tokens. See `scripts/example.json`.
 
 ## Generating and Verifying the Merkle Root
 
@@ -33,3 +32,26 @@ Root matches the one read from the JSON? true
 Use alchemy to fork mainnet:
 `$ export ALCHEMY_API_KEY="e5D9bYnpx..."`
 Then run `npx hardhat test`
+
+## Deployment
+Deploy the contract with the following arguments:
+* `address token`: Address of ERC20 token to distribute
+* `bytes32 merkleRoot`: Generated from the script
+* `uint256 startTimestamp`: Unix timestamp that vesting starts (i.e., 0 distribution)
+* `uint256 endTimestamp`: Unix timestamp that vesting should end
+
+After deployment, be sure to transfer the correct amount of the `token` to the contract.
+
+### Common Vesting Use Cases
+* **Immediate total vesting**: Set `startTimestamp` and `endTimestamp` to the current unix time.
+* **Future total vesting**: Set `startTimestamp` and `endTimestamp` to the desired vesting time. Tokens will not be unlockable until that timestamp.
+* **Simple linear vesting**: Set `startTimestamp` to the current unix timestamp and `endTimestamp` to the end of the vesting period.
+* **Linear vesting after initial slug**: Set `endTimestamp` to the desired end of the vesting period, and set `startTimestamp` to a point in the past such that (current time - start time) / (end time - start time) is the desired initial fraction.
+
+## Claiming Vested Token
+Anyone on the Internet can call `claimVested` with data from the output JSON file. It will result in the appropriate amount of token being transferred to the indexed address. There is **no** reliance on `msg.sender`.
+
+## License
+This code is a derivative work of https://github.com/Uniswap/merkle-distributor/ and maintains that work's GPL V3 license.
+
+**Shipyard Software is not responsible for any loss of funds from using this contract**
