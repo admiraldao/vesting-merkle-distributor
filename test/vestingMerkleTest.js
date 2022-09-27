@@ -14,6 +14,8 @@ describe('Vesting Merkle Tests', function() {
   let richGuy;
   let richGuyAugur;
 
+  let snapshot;
+
   const _1e18 = '000000000000000000';
 
   const AUGUR_REP_ADDRESS = "0x221657776846890989a759BA2973e427DfF5C9bB";
@@ -40,10 +42,20 @@ describe('Vesting Merkle Tests', function() {
       params: [RICH_GUY_ADDRESS],
     });
     richGuy = await ethers.provider.getSigner(RICH_GUY_ADDRESS);
+
+    // take a snapshot of the current state of the blockchain
+    snapshot = await helpers.takeSnapshot();
+  });
+
+  beforeEach(async function() {
+    await snapshot.restore();
   });
 
   it('Deployment tests', async function() {
     let timestamp = await helpers.time.latest();
+
+    await expect(vmdFactory.deploy(AUGUR_REP_ADDRESS, merkleObject["merkleRoot"], timestamp+1, timestamp)).to.be.revertedWith("Invalid interval");
+
 
     const vmd = await vmdFactory.deploy(AUGUR_REP_ADDRESS, merkleObject["merkleRoot"], timestamp, timestamp);
     await vmd.deployed();
@@ -78,7 +90,7 @@ describe('Vesting Merkle Tests', function() {
   });
 
   it('Can fully withdraw after end of vesting', async function() {
-    let pastTimestamp = await helpers.time.latest()-10000;
+    const pastTimestamp = await helpers.time.latest()-10000;
 
     const vmd = await vmdFactory.deploy(AUGUR_REP_ADDRESS, merkleObject["merkleRoot"], pastTimestamp, pastTimestamp);
     await vmd.deployed();
@@ -113,7 +125,45 @@ describe('Vesting Merkle Tests', function() {
   });
 
   it('Partial vesting works as expected', async function() {
-    // TODO
+    const pastTimestamp = await helpers.time.latest()-10000;
+    const futureTimestamp = pastTimestamp + 50000;
+
+    const vmd = await vmdFactory.deploy(AUGUR_REP_ADDRESS, merkleObject["merkleRoot"], pastTimestamp, futureTimestamp);
+    await vmd.deployed();
+
+    await sendInAsset(vmd.address);
+    // 20% should be vested (~10,001 of 50,000)
+    expect(await vmd.fractionVested()).to.equal(51);
+
+    let tx = vmd.claimVested(1, RECIPIENT_ONE_ADDRESS, claimOne.amount, claimOne.proof);
+    await expect(tx).to.emit(vmd, 'Claimed').withArgs(RECIPIENT_ONE_ADDRESS, claimOne.amount/5);
+    expect(await richGuyAugur.balanceOf(RECIPIENT_ONE_ADDRESS)).to.equal(BN.from(claimOne.amount).div(5));
+
+    expect(await vmd.getClaimAmount(0)).to.equal(0);
+    expect(await vmd.getClaimAmount(1)).to.equal(51);
+    expect(await vmd.getClaimAmount(2)).to.equal(0);
+
+
+    await helpers.time.increaseTo(pastTimestamp+20000);
+
+    tx = vmd.claimVested(0, RECIPIENT_ZERO_ADDRESS, claimZero.amount, claimZero.proof);
+    await expect(tx).to.emit(vmd, 'Claimed').withArgs(RECIPIENT_ZERO_ADDRESS, 2*claimZero.amount/5);
+    expect(await richGuyAugur.balanceOf(RECIPIENT_ZERO_ADDRESS)).to.equal(BN.from(claimZero.amount).mul(2).div(5));
+
+    expect(await vmd.getClaimAmount(0)).to.equal(102);
+    expect(await vmd.getClaimAmount(1)).to.equal(51);
+    expect(await vmd.getClaimAmount(2)).to.equal(0);
+
+    tx = vmd.claimVested(1, RECIPIENT_ONE_ADDRESS, claimOne.amount, claimOne.proof);
+    await expect(tx).to.emit(vmd, 'Claimed').withArgs(RECIPIENT_ONE_ADDRESS, claimOne.amount/5);
+    expect(await richGuyAugur.balanceOf(RECIPIENT_ONE_ADDRESS)).to.equal(BN.from(claimOne.amount).mul(2).div(5));
+
+    expect(await vmd.getClaimAmount(0)).to.equal(102);
+    expect(await vmd.getClaimAmount(1)).to.equal(102);
+    expect(await vmd.getClaimAmount(2)).to.equal(0);
+
+
+
   });
 
 
