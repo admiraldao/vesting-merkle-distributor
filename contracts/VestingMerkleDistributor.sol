@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-//import "hardhat/console.sol";
-
 contract VestingMerkleDistributor {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
@@ -38,9 +36,8 @@ contract VestingMerkleDistributor {
     }
 
     function getVestingStartAndEnd() public view returns (uint256 vestingStart, uint256 vestingEnd) {
-        uint256 _vse = VESTING_START_AND_END;
-        vestingStart = uint256(_vse >> 128);
-        vestingEnd = uint256(uint128(_vse));
+        vestingStart = uint256(VESTING_START_AND_END >> 128);
+        vestingEnd = uint256(uint128(VESTING_START_AND_END));
     }
 
     function fractionVested() public view returns (uint8) {
