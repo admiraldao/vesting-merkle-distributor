@@ -6,7 +6,7 @@ Starting from https://github.com/Uniswap/merkle-distributor/
 * Extends the `claimed` bitmap from a single binary value per address to 8 bits per address, meaning that vesting can take place in 1/255th increments while still being highly gas efficient (Since 256/8 = 32 addresses share the same memory slot)
 
 ## Preparing the input
-Prepare a JSON file that maps addresses to the numeric (base 10) or string (base 16) number of tokens. See `scripts/example.json`.
+Prepare a JSON file that maps addresses to the number of tokens. See `scripts/example.json`.
 
 ## Generating and Verifying the Merkle Root
 
