@@ -22,6 +22,7 @@ describe('Vesting Merkle Tests', function() {
 
   const RECIPIENT_ZERO_ADDRESS = '0x02Da682238ff9D89f1974653f33aD6A679642B95';
   const RECIPIENT_ONE_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f';
+  const BIG_RECIPIENT_ADDRESS = '0xffF3c47bf079B26b9f88911FdEf58B2795961354';
 
   async function sendInAsset(contractAddress) {
     richGuyAugur = await ethers.getContractAt(erc20, AUGUR_REP_ADDRESS, richGuy);
@@ -35,6 +36,7 @@ describe('Vesting Merkle Tests', function() {
 
     claimZero = merkleObject['claims'][RECIPIENT_ZERO_ADDRESS];
     claimOne = merkleObject['claims'][RECIPIENT_ONE_ADDRESS];
+    claimBig = merkleObject['claims'][BIG_RECIPIENT_ADDRESS];
 
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
@@ -120,6 +122,13 @@ describe('Vesting Merkle Tests', function() {
     expect(await vmd.getClaimAmount(0)).to.equal(255);
     expect(await vmd.getClaimAmount(1)).to.equal(255);
     expect(await vmd.getClaimAmount(2)).to.equal(0);
+
+    tx = vmd.claimVested(3, BIG_RECIPIENT_ADDRESS, claimBig.amount, claimBig.proof);
+    await expect(tx).to.emit(vmd, 'Claimed').withArgs(BIG_RECIPIENT_ADDRESS, "5000000000000000000");
+
+    expect(await vmd.getClaimAmount(3)).to.equal(255);
+
+
   });
 
   it('Partial vesting works as expected', async function() {
