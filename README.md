@@ -51,6 +51,15 @@ After deployment, be sure to transfer the correct amount of the `token` to the c
 ## Claiming Vested Token
 Anyone on the Internet can call `claimVested` with data from the output JSON file. It will result in the appropriate amount of token being transferred to the indexed address. There is **no** reliance on `msg.sender`.
 
+### Checking for claimed token
+Calling `getClaimAmount` for an index returns a `uint8` between 0 (not claimed) and 255 (fully claimed).
+
+### Checking for vested token
+Calling `fractionVested` for an index returns a `uint8` between 0 (nothing to claim) and 255 (can be fully claimed).
+
+### Checking if a user has vested token they could claim
+`fractionVested() - getClaimAmount()`
+
 ## License
 This code is a derivative work of https://github.com/Uniswap/merkle-distributor/ and maintains that work's GPL V3 license.
 
